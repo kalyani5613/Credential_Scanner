@@ -1,0 +1,145 @@
+{
+    "visa_card": {
+        "regex": "\\b4[0-9]{3}[\\s\\-]?[0-9]{4}[\\s\\-]?[0-9]{4}[\\s\\-]?[0-9]{4}\\b",
+        "risk": "Critical",
+        "desc": "Visa card number",
+        "category": "payment"
+    },
+    "mastercard": {
+        "regex": "\\b5[1-5][0-9]{2}[\\s\\-]?[0-9]{4}[\\s\\-]?[0-9]{4}[\\s\\-]?[0-9]{4}\\b",
+        "risk": "Critical",
+        "desc": "Mastercard number",
+        "category": "payment"
+    },
+    "amex_card": {
+        "regex": "\\b3[47][0-9]{2}[\\s\\-]?[0-9]{6}[\\s\\-]?[0-9]{5}\\b",
+        "risk": "Critical",
+        "desc": "American Express card number",
+        "category": "payment"
+    },
+    "cvv": {
+        "regex": "(?i)(cvv|cvc|security.?code)\\s*[:=]\\s*[0-9]{3,4}",
+        "risk": "Critical",
+        "desc": "Card CVV / security code",
+        "category": "payment"
+    },
+    "iban": {
+        "regex": "\\b[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7,}\\b",
+        "risk": "Critical",
+        "desc": "IBAN bank account number",
+        "category": "banking"
+    },
+    "uk_sort_code": {
+        "regex": "\\b[0-9]{2}[\\-\\s][0-9]{2}[\\-\\s][0-9]{2}\\b",
+        "risk": "High",
+        "desc": "UK bank sort code",
+        "category": "banking"
+    },
+    "aws_access_key": {
+        "regex": "\\bAKIA[0-9A-Z]{16}\\b",
+        "risk": "Critical",
+        "desc": "AWS access key ID",
+        "category": "cloud_key"
+    },
+    "gcp_api_key": {
+        "regex": "\\bAIza[0-9A-Za-z\\-_]{35}\\b",
+        "risk": "Critical",
+        "desc": "Google Cloud API key",
+        "category": "cloud_key"
+    },
+    "github_token": {
+        "regex": "\\bghp_[A-Za-z0-9]{36}\\b",
+        "risk": "High",
+        "desc": "GitHub personal access token",
+        "category": "dev_token"
+    },
+    "jwt_token": {
+        "regex": "\\beyJ[A-Za-z0-9_\\-]+\\.[A-Za-z0-9_\\-]+\\.[A-Za-z0-9_\\-]+\\b",
+        "risk": "High",
+        "desc": "JWT authentication token",
+        "category": "auth_token"
+    },
+    "private_key": {
+        "regex": "-----BEGIN [A-Z ]*PRIVATE KEY-----",
+        "risk": "Critical",
+        "desc": "Private key / certificate",
+        "category": "cryptographic"
+    },
+    "password_plain": {
+    "regex": "(?i)\\b(password|passwd|pwd)\\s*[:=]\\s*['\"]?(\\S{6,})['\"]?",
+    "risk": "High",
+    "desc": "Password in plain text",
+    "category": "credential"
+},
+    "password_is": {
+        "regex": "(?i)(password|pwd)\\s+is\\s+['\"]?(\\S{6,})['\"]?",
+        "risk": "High",
+        "desc": "Password written conversationally",
+        "category": "credential"
+    },
+   "otp_code": {
+    "regex": "(?i)(otp|one.time.password|verification.?code|verify.?code|auth.?code)\\s*[:=\\s]\\s*([0-9]{4,8})",
+    "risk": "High",
+    "desc": "OTP or verification code",
+    "category": "auth_code"
+},
+    "india_pan": {
+        "regex": "\\b[A-Z]{5}[0-9]{4}[A-Z]{1}\\b",
+        "risk": "High",
+        "desc": "Indian PAN number",
+        "category": "national_id"
+    },
+  "india_aadhaar": {
+    "regex": "\b[2-9][0-9]{3}[- ]?[0-9]{4}[- ]?[0-9]{4}\b",
+    "risk": "Critical",
+    "desc": "Aadhaar number",
+    "category": "national_id"
+},
+    "generic_api_key": {
+        "regex": "(?i)(api[_\\-]?key|access[_\\-]?token)\\s*[:=]\\s*['\"]?([A-Za-z0-9_\\-]{16,64})['\"]?",
+        "risk": "High",
+        "desc": "Generic API key",
+        "category": "api_key"
+    },
+    "bearer_token": {
+        "regex": "(?i)bearer\\s+([A-Za-z0-9_\\-\\.]{20,})",
+        "risk": "High",
+        "desc": "Bearer authentication token",
+        "category": "auth_token"
+    },
+    "slack_token": {
+        "regex": "\\bxox[baprs]-[0-9A-Za-z\\-]{10,48}\\b",
+        "risk": "High",
+        "desc": "Slack API token",
+        "category": "dev_token"
+    },
+    "verification_code": {
+    "regex": "(?i)(your\\s+)?(verification|security|auth)\\s+(code|number)\\s+(is|:)\\s*[0-9]{4,8}",
+    "risk": "High",
+    "desc": "Verification code exposed",
+    "category": "auth_code"
+},"uk_account_number": {
+    "regex": "\\b[0-9]{8}\\b",
+    "risk": "High",
+    "desc": "UK bank account number",
+    "category": "banking"
+},
+"pin_number": {
+    "regex": "(?i)\\bpin\\s*[:=]\\s*[0-9]{4,6}\\b",
+    "risk": "Critical",
+    "desc": "PIN number exposed",
+    "category": "credential"
+},
+"email_password": {
+    "regex": "(?i)(username|user|email)\\s*[:=]\\s*\\S+\\s+(password|pwd)\\s*[:=]\\s*\\S+",
+    "risk": "High",
+    "desc": "Username and password pair exposed",
+    "category": "credential"
+},
+"azure_key": {
+    "regex": "(?i)AccountKey=[A-Za-z0-9+/=]{88}",
+    "risk": "Critical",
+    "desc": "Azure storage account key",
+    "category": "cloud_key"
+}
+}
