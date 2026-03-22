@@ -1,59 +1,135 @@
-import re
 import math
-from patterns import redact, hash_value
-
-ENTROPY_THRESHOLD = 4.2
-MIN_LENGTH        = 20
-TOKEN_RE          = re.compile(r"[A-Za-z0-9+/=_\-]{20,}")
+import hashlib
+import re
 
 
-def shannon_entropy(text: str) -> float:
-    if not text:
+# -----------------------------
+# CONFIGURATION
+# -----------------------------
+
+MIN_LENGTH = 8
+ENTROPY_THRESHOLD = 3.0
+
+
+# -----------------------------
+# HASH FUNCTION
+# -----------------------------
+
+def hash_value(value: str):
+
+    return hashlib.sha256(value.encode()).hexdigest()
+
+
+# -----------------------------
+# ENTROPY CALCULATION
+# -----------------------------
+
+def shannon_entropy(data: str) -> float:
+
+    if not data:
         return 0.0
-    freq = {}
-    for ch in text:
-        freq[ch] = freq.get(ch, 0) + 1
-    length = len(text)
-    return round(
-        -sum((c / length) * math.log2(c / length)
-             for c in freq.values()), 3
+
+    probabilities = [
+        float(data.count(char)) / len(data)
+        for char in set(data)
+    ]
+
+    return -sum(p * math.log2(p) for p in probabilities)
+
+
+# -----------------------------
+# TOKEN CLEANING
+# -----------------------------
+
+def clean_token(token: str):
+
+    return token.strip(
+        " \n\t\r,.:;()[]{}<>\"'"
     )
 
 
-def run_entropy_scan(text: str) -> list:
+# -----------------------------
+# SECRET-LIKE TOKEN FILTER
+# -----------------------------
+
+def looks_like_secret(token: str):
+
+    # must contain at least one number
+    if not re.search(r"[0-9]", token):
+        return False
+
+    # must contain uppercase OR symbol
+    if not (
+        re.search(r"[A-Z]", token)
+        or re.search(r"[_\\-!@#$%^&*]", token)
+    ):
+        return False
+
+    return True
+
+
+# -----------------------------
+# IGNORE STRUCTURED CREDENTIALS
+# (handled by regex layer)
+# -----------------------------
+
+def is_structured_credential(token: str):
+
+    if token.isdigit() and len(token) <= 6:
+        return True
+
+    if re.search(r"(?i)(password|pin|otp|cvv|code)", token):
+        return True
+
+    return False
+
+
+# -----------------------------
+# MAIN ENTROPY SCAN FUNCTION
+# -----------------------------
+
+def run_entropy_scan(text: str):
+
     findings = []
-    seen = set()
-    for token in TOKEN_RE.findall(text):
+
+    tokens = re.split(r"\s+", text)
+
+    for token in tokens:
+
+        token = clean_token(token)
+
         if len(token) < MIN_LENGTH:
             continue
-        score = shannon_entropy(token)
-        if score < ENTROPY_THRESHOLD:
+
+        if is_structured_credential(token):
             continue
-        h = hash_value(token)
-        if h in seen:
+
+        if not looks_like_secret(token):
             continue
-        seen.add(h)
-        pos     = text.find(token)
-        s       = max(0, pos - 60)
-        e       = min(len(text), pos + len(token) + 60)
-        snippet = text[s:e].replace(token, redact(token))
-        risk    = ("Critical" if score >= 5.5
-                   else "High" if score >= 5.0
-                   else "Medium")
-        conf    = (0.85 if score >= 5.5
-                   else 0.75 if score >= 5.0
-                   else 0.60)
-        findings.append({
-            "layer":           "entropy",
-            "credential_type": "high_entropy_token",
-            "description":     f"High-entropy string (score {score}) — likely a secret",
-            "risk_tier":       risk,
-            "category":        "unknown_secret",
-            "redacted_value":  redact(token),
-            "value_hash":      h,
-            "context_snippet": snippet.strip(),
-            "char_position":   pos,
-            "confidence":      conf,
-            "entropy_score":   score,
-        })
+
+        entropy = shannon_entropy(token)
+
+        if entropy >= ENTROPY_THRESHOLD:
+
+            findings.append({
+
+                "credential_type": "high_entropy_secret",
+
+                "value": token,
+
+                "value_hash": hash_value(token),
+
+                "confidence": round(entropy / 5, 2),
+
+                "layer": "entropy",
+
+                "risk_tier": "Medium",
+
+                "description": "High-entropy string detected (possible secret)",
+
+                "context_snippet": token,
+
+                "redacted_value": token[:4] + "****"
+            })
+
     return findings

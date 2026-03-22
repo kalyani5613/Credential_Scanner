@@ -8,3 +8,4 @@ python-docx
 pydantic
 nltk
 ollama  
+python-magic-bin

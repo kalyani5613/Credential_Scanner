@@ -2,10 +2,12 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from datetime import datetime, timezone
+from attachment_scanner import analyze_attachment
 import uuid
 import time
 
 from extractor        import extract_text
+from attachment_scanner import analyze_attachment
 from patterns         import run_regex_scan, reload_patterns
 from entropy          import run_entropy_scan
 from ner_detector     import run_ner_scan
@@ -129,6 +131,17 @@ def reload():
     count = reload_patterns()
     return {"status": "reloaded", "patterns_loaded": count}
 
+@app.post("/attachment/scan")
+async def scan_attachment(file: UploadFile = File(...)):
+    """
+    5-stage static malware analysis.
+    Safe — file is never executed.
+    """
+    data = await file.read()
+    if len(data) > 25 * 1024 * 1024:
+        raise HTTPException(413, "File too large — max 25MB")
+    result = analyze_attachment(data, file.filename)
+    return result
 
 @app.get("/", response_class=HTMLResponse)
 def frontend():
@@ -424,21 +437,29 @@ function UploadForm({ onResult }) {
         const fd = new FormData()
         fd.append('text', txt)
         res = await fetch('/scan/text', { method:'POST', body:fd })
-      } else {
-        if (!file) {
-          alert('Select a file first.')
-          setLoading(false); return
-        }
-        const fd = new FormData()
-        fd.append('file', file)
-        res = await fetch('/scan/file', { method:'POST', body:fd })
-      }
+      } else if (tab === 'file') {
+  if (!file) {
+    alert('Select a file first.')
+    setLoading(false); return
+  }
+  const fd = new FormData()
+  fd.append('file', file)
+  res = await fetch('/scan/file', { method:'POST', body:fd })
+} else {
+  if (!file) {
+    alert('Select a file first.')
+    setLoading(false); return
+  }
+  const fd = new FormData()
+  fd.append('file', file)
+  res = await fetch('/attachment/scan', { method:'POST', body:fd })
+}
       const data = await res.json()
       if (!res.ok) {
         alert('Error: ' + (data.detail || 'unknown'))
         setLoading(false); return
       }
-      onResult(data)
+      onResult(data, tab === 'malware' ? 'malware' : 'credential')
     } catch(e) {
       alert('Cannot connect to server. Is uvicorn running?')
     } finally {
@@ -455,30 +476,213 @@ function UploadForm({ onResult }) {
         </button>
         <button className={`tab ${tab==='file'?'on':''}`}
           onClick={() => setTab('file')}>
-          Upload file
+          Scan file for credentials
+        </button>
+        <button className={`tab ${tab==='malware'?'on':''}`}
+          onClick={() => setTab('malware')}>
+          Scan attachment for malware
         </button>
       </div>
 
-      {tab === 'text' ? (
-        <textarea
-          value={txt}
-          onChange={e => setTxt(e.target.value)}
-          placeholder="Paste email content, headers, body - anything suspicious..."/>
-      ) : (
-        <div className="drop" onClick={() => fileRef.current.click()}>
-          <p>Drop file here or click to browse</p>
-          <span>Supports .eml | .pdf | .docx | .png | .jpg | .txt</span>
-          <input ref={fileRef} type="file"
-            accept=".eml,.pdf,.docx,.png,.jpg,.jpeg,.txt,.bmp,.tiff"
-            style={{display:'none'}}
-            onChange={e => setFile(e.target.files[0])}/>
-          {file && <div className="fname">Selected: {file.name}</div>}
-        </div>
-      )}
-
+     {tab === 'text' ? (
+  <textarea
+    value={txt}
+    onChange={e => setTxt(e.target.value)}
+    placeholder="Paste email content, headers, body — anything suspicious..."/>
+) : tab === 'file' ? (
+  <div className="drop" onClick={() => fileRef.current.click()}>
+    <p>Drop file here or click to browse</p>
+    <span>Supports .eml · .pdf · .docx · .png · .jpg · .txt</span>
+    <input ref={fileRef} type="file"
+      accept=".eml,.pdf,.docx,.png,.jpg,.jpeg,.txt,.bmp,.tiff"
+      style={{display:'none'}}
+      onChange={e => setFile(e.target.files[0])}/>
+    {file && <div className="fname">Selected: {file.name}</div>}
+  </div>
+) : (
+  <div className="drop" onClick={() => fileRef.current.click()}>
+    <p>Drop suspicious attachment here</p>
+    <span>Supports .pdf · .docx · .exe · .zip · .js · .bat · any file</span>
+    <input ref={fileRef} type="file"
+      style={{display:'none'}}
+      onChange={e => setFile(e.target.files[0])}/>
+    {file && <div className="fname">Selected: {file.name}</div>}
+  </div>
+)}
       {loading
         ? <div className="spin">{loadingMsg}<br/><br/>Elapsed: {elapsedSec}s</div>
         : <button className="btn" onClick={scan}>Scan now</button>}
+    </div>
+  )
+}
+
+
+function MalwareResults({ data, onReset }) {
+  const label = data.risk_label || 'Clean'
+  const findings = data.all_findings || []
+
+  const byStage = {}
+  findings.forEach(f => {
+    const s = f.stage || 'Unknown'
+    if (!byStage[s]) byStage[s] = []
+    byStage[s].push(f)
+  })
+
+  const stageColors = {
+    'PDF Stream Analyzer':      {badge:'b4', label:'PDF'},
+    'Office Macro Extractor':   {badge:'b1', label:'Office'},
+    'PE Header Analyzer':       {badge:'b2', label:'PE'},
+    'ZIP Recursive Analyzer':   {badge:'b3', label:'ZIP'},
+    'YARA-style Pattern Engine':{badge:'b4', label:'YARA'},
+  }
+
+  return (
+    <div>
+      <div className={`banner ${label}`}>
+        <div>
+          <h2>{label} Risk</h2>
+          <p>{data.human_summary}</p>
+        </div>
+        <div className="circle">
+          <span className="n">{data.risk_score}</span>
+          <span className="l">/ 100</span>
+        </div>
+      </div>
+
+      <div className={`abox ${label}`}>
+        File: {data.filename} ({data.file_size_kb} KB)
+      </div>
+
+      <div className="pills">
+        <span className="pill t">Total: {data.total_findings}</span>
+        <span className="pill c">Critical: {data.critical_count}</span>
+        <span className="pill h">High: {data.high_count}</span>
+        <span className="pill m">Medium: {data.medium_count}</span>
+        <span className="pill l">Low: {data.low_count}</span>
+      </div>
+
+      <div className="layer">
+        <div className="lhead">
+          <div className="ltitle">
+            <span className="badge b1">Stage 1</span>
+            File Type Detection
+          </div>
+        </div>
+        <div className="lbody">
+          <div className="finding">
+            <div className="ftop">
+              <span className="ftype">
+                {data.stages?.stage_1_file_type?.detected_type || 'Unknown'}
+              </span>
+              {data.stages?.stage_1_file_type?.extension_mismatch &&
+                <span className="tier Critical">Mismatch</span>}
+            </div>
+            <div className="fdesc">
+              Declared: {data.stages?.stage_1_file_type?.declared_extension}
+              &nbsp;|&nbsp;
+              Detected: {data.stages?.stage_1_file_type?.detected_type}
+            </div>
+            {data.stages?.stage_1_file_type?.mismatch_desc &&
+              <div className="snippet">
+                {data.stages.stage_1_file_type.mismatch_desc}
+              </div>}
+          </div>
+        </div>
+      </div>
+
+      {Object.entries(byStage).map(([stage, items]) => (
+        <Layer key={stage}
+          badge={stageColors[stage]?.label || 'Stage'}
+          badgeClass={stageColors[stage]?.badge || 'b1'}
+          title={stage}
+          findings={items.map(f => ({
+            ...f,
+            credential_type: f.rule || 'finding',
+            layer:           'attachment',
+            detected_by:     ['attachment'],
+            layer_count:     1,
+            context_snippet: f.context || f.description,
+            redacted_value:  'N/A',
+            value_hash:      f.rule || '',
+          }))}
+          defaultOpen={items.length > 0}/>
+      ))}
+
+      <div className="layer">
+        <div className="lhead">
+          <div className="ltitle">
+            <span className="badge b2">Stage 3</span>
+            Hash Reputation
+          </div>
+        </div>
+        <div className="lbody">
+          <div className="finding">
+            <div className="fdesc">
+              MD5: {data.stages?.stage_3_hash?.md5}
+            </div>
+            <div className="fdesc">
+              SHA256: {data.stages?.stage_3_hash?.sha256?.slice(0,32)}...
+            </div>
+            <div className="fdesc" style={{
+              color: data.stages?.stage_3_hash?.known_malware
+                ? '#b71c1c' : '#2e7d32',
+              fontWeight: 600
+            }}>
+              {data.stages?.stage_3_hash?.known_malware
+                ? 'KNOWN MALWARE: ' + data.stages.stage_3_hash.known_malware
+                : 'Not in known malware database'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {data.stages?.stage_4_ml?.applicable &&
+        <div className="layer">
+          <div className="lhead">
+            <div className="ltitle">
+              <span className="badge b2">Stage 4</span>
+              ML Classifier
+            </div>
+          </div>
+          <div className="lbody">
+            <div className="finding">
+              <div className="ftop">
+                <span className="ftype">
+                  {data.stages.stage_4_ml.label}
+                </span>
+                <span className="conf">
+                  score {data.stages.stage_4_ml.score}
+                </span>
+              </div>
+              {Object.keys(data.stages.stage_4_ml.features || {}).map(k => (
+                <div key={k} className="fdesc">
+                  {k.replace(/_/g,' ')}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>}
+
+      {(data.stages?.stage_5_urls || []).length > 0 &&
+        <div className="layer">
+          <div className="lhead">
+            <div className="ltitle">
+              <span className="badge b4">Stage 5</span>
+              Suspicious URLs
+            </div>
+          </div>
+          <div className="lbody">
+            {data.stages.stage_5_urls.map((url, i) => (
+              <div key={i} className="finding">
+                <div className="snippet">{url}</div>
+              </div>
+            ))}
+          </div>
+        </div>}
+
+      <button className="again" onClick={onReset}>
+        Scan another file
+      </button>
     </div>
   )
 }
@@ -543,7 +747,7 @@ function Results({ data, onReset }) {
         defaultOpen={byLayer.entropy.length > 0}/>
 
       <Layer badge="Layer 4" badgeClass="b3"
-        title="Named Entity Recognition (NLTK)"
+        title="Named Entity Recognition (Transformer PII Model)"
         findings={byLayer.ner}
         defaultOpen={byLayer.ner.length > 0}/>
 
@@ -564,17 +768,28 @@ function Results({ data, onReset }) {
 }
 
 function App() {
-  const [result, setResult] = useState(null)
+  const [result,       setResult]       = useState(null)
+  const [resultType,   setResultType]   = useState(null)
+
+  function handleResult(data, type) {
+    setResult(data)
+    setResultType(type)
+  }
+
   return (
     <div className="wrap">
-      <h1>Credential Scanner</h1>
+      <h1>Fraud Detection System</h1>
       <p className="sub">
-        Hybrid detection - Regex + Entropy + NER + LLM -
+        Credential Scanner + Malicious Attachment Analyzer —
         running fully offline
       </p>
       {result
-        ? <Results data={result} onReset={() => setResult(null)}/>
-        : <UploadForm onResult={setResult}/>}
+        ? resultType === 'malware'
+          ? <MalwareResults data={result}
+              onReset={() => { setResult(null); setResultType(null) }}/>
+          : <Results data={result}
+              onReset={() => { setResult(null); setResultType(null) }}/>
+        : <UploadForm onResult={handleResult}/>}
     </div>
   )
 }
