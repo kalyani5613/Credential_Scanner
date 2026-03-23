@@ -9,3 +9,11 @@ pydantic
 nltk
 ollama  
 python-magic-bin
+detect-secrets
+pikepdf
+pdfminer
+oletools
+pefile
+py7zr
+yara-python
+requests

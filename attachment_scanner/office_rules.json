@@ -1,0 +1,268 @@
+[
+  {
+    "pattern": "AutoOpen",
+    "risk": "Critical",
+    "description": "Auto-run macro executes when document opens",
+    "detail": "Most common macro malware trigger — runs without user interaction",
+    "category": "auto_execute"
+  },
+  {
+    "pattern": "Document_Open",
+    "risk": "Critical",
+    "description": "Document open event macro — auto-executes",
+    "detail": "VBA event handler that fires immediately on document open",
+    "category": "auto_execute"
+  },
+  {
+    "pattern": "Workbook_Open",
+    "risk": "Critical",
+    "description": "Workbook open macro — executes in Excel",
+    "detail": "Excel-specific auto-run trigger on workbook open",
+    "category": "auto_execute"
+  },
+  {
+    "pattern": "Auto_Open",
+    "risk": "Critical",
+    "description": "XLM auto-open macro in Excel",
+    "detail": "Legacy Excel 4.0 macro auto-run trigger",
+    "category": "auto_execute"
+  },
+  {
+    "pattern": "AutoClose",
+    "risk": "High",
+    "description": "Macro runs on document close",
+    "detail": "Can exfiltrate data or clean up malware traces on close",
+    "category": "auto_execute"
+  },
+  {
+    "pattern": "AutoExec",
+    "risk": "Critical",
+    "description": "AutoExec macro — runs on Word startup",
+    "detail": "Persists across all documents opened in Word",
+    "category": "auto_execute"
+  },
+  {
+    "pattern": "DDEAUTO",
+    "risk": "Critical",
+    "description": "DDE auto-execute — runs commands via Office DDE",
+    "detail": "Fileless attack vector — no macro needed, uses DDE protocol",
+    "category": "dde"
+  },
+  {
+    "pattern": "DDE(",
+    "risk": "High",
+    "description": "DDE function call detected",
+    "detail": "Dynamic Data Exchange can execute arbitrary commands",
+    "category": "dde"
+  },
+  {
+    "pattern": "WScript.Shell",
+    "risk": "Critical",
+    "description": "WScript.Shell object — executes system commands",
+    "detail": "Most common VBA malware technique for command execution",
+    "category": "shell_exec"
+  },
+  {
+    "pattern": "Shell(",
+    "risk": "High",
+    "description": "VBA Shell function — runs external programs",
+    "detail": "Directly launches executables from macro code",
+    "category": "shell_exec"
+  },
+  {
+    "pattern": "powershell",
+    "risk": "High",
+    "description": "PowerShell invocation found in macro",
+    "detail": "Macros commonly use PowerShell for second-stage payload delivery",
+    "category": "powershell"
+  },
+  {
+    "pattern": "powershell -enc",
+    "risk": "Critical",
+    "description": "Encoded PowerShell — obfuscated command execution",
+    "detail": "Base64-encoded PS commands used to hide malicious payloads",
+    "category": "powershell"
+  },
+  {
+    "pattern": "-windowstyle hidden",
+    "risk": "Critical",
+    "description": "Hidden PowerShell window — stealth execution",
+    "detail": "Hides execution window from user — classic malware technique",
+    "category": "powershell"
+  },
+  {
+    "pattern": "-ExecutionPolicy Bypass",
+    "risk": "Critical",
+    "description": "PowerShell execution policy bypass",
+    "detail": "Bypasses system PowerShell restrictions to run unsigned scripts",
+    "category": "powershell"
+  },
+  {
+    "pattern": "cmd.exe",
+    "risk": "Critical",
+    "description": "CMD execution found in macro",
+    "detail": "Direct cmd.exe invocation for command execution",
+    "category": "shell_exec"
+  },
+  {
+    "pattern": "URLDownloadToFile",
+    "risk": "Critical",
+    "description": "Downloads file from internet — dropper behaviour",
+    "detail": "Classic VBA dropper function — downloads and saves malware",
+    "category": "downloader"
+  },
+  {
+    "pattern": "XMLHTTP",
+    "risk": "High",
+    "description": "HTTP request object in macro — network communication",
+    "detail": "Used to download payloads or exfiltrate data over HTTP",
+    "category": "downloader"
+  },
+  {
+    "pattern": "WinHttp",
+    "risk": "High",
+    "description": "WinHTTP object in macro — network communication",
+    "detail": "Alternative HTTP client used in macro malware downloaders",
+    "category": "downloader"
+  },
+  {
+    "pattern": "CreateObject",
+    "risk": "High",
+    "description": "Creates COM object — used to access system resources",
+    "detail": "Gateway to WScript.Shell, XMLHTTP, FileSystem and other dangerous objects",
+    "category": "com_object"
+  },
+  {
+    "pattern": "GetObject(",
+    "risk": "High",
+    "description": "GetObject() — accesses existing COM/WMI objects",
+    "detail": "Can access WMI for system enumeration and command execution",
+    "category": "com_object"
+  },
+  {
+    "pattern": "HKEY_",
+    "risk": "High",
+    "description": "Registry access in macro — persistence mechanism",
+    "detail": "Writing to registry run keys is a common persistence technique",
+    "category": "persistence"
+  },
+  {
+    "pattern": "RegWrite",
+    "risk": "Critical",
+    "description": "Registry write operation in macro",
+    "detail": "Directly writes to registry — used for persistence or config changes",
+    "category": "persistence"
+  },
+  {
+    "pattern": "regsvr32",
+    "risk": "Critical",
+    "description": "Regsvr32 abuse — LOLBin used to bypass defences",
+    "detail": "Living-off-the-land binary used to execute DLLs and bypass AppLocker",
+    "category": "lolbin"
+  },
+  {
+    "pattern": "mshta",
+    "risk": "Critical",
+    "description": "MSHTA execution — runs HTA files, bypasses controls",
+    "detail": "LOLBin that executes HTML applications with full system access",
+    "category": "lolbin"
+  },
+  {
+    "pattern": "certutil",
+    "risk": "High",
+    "description": "CertUtil — can decode base64 and download files",
+    "detail": "Commonly abused to decode payloads: certutil -decode",
+    "category": "lolbin"
+  },
+  {
+    "pattern": "bitsadmin",
+    "risk": "High",
+    "description": "BITSAdmin — Windows download utility abuse",
+    "detail": "Used to download files in the background, bypassing some controls",
+    "category": "lolbin"
+  },
+  {
+    "pattern": "rundll32",
+    "risk": "High",
+    "description": "Rundll32 — LOLBin for executing DLL code",
+    "detail": "Used to execute malicious DLLs and bypass application controls",
+    "category": "lolbin"
+  },
+  {
+    "pattern": "wmic",
+    "risk": "High",
+    "description": "WMIC — WMI command line abuse",
+    "detail": "Used for system enumeration, lateral movement and execution",
+    "category": "lolbin"
+  },
+  {
+    "pattern": "Environ(",
+    "risk": "Low",
+    "description": "Reads environment variables — reconnaissance",
+    "detail": "Used to fingerprint the victim system before payload delivery",
+    "category": "recon"
+  },
+  {
+    "pattern": "Chr(",
+    "risk": "Medium",
+    "description": "Chr() function — character obfuscation technique",
+    "detail": "Malware builds strings char-by-char to evade pattern detection",
+    "category": "obfuscation"
+  },
+  {
+    "pattern": "Asc(",
+    "risk": "Low",
+    "description": "Asc() function — character code conversion",
+    "detail": "Sometimes used in obfuscated macro code",
+    "category": "obfuscation"
+  },
+  {
+    "pattern": "StrReverse(",
+    "risk": "Medium",
+    "description": "String reversal — obfuscation technique",
+    "detail": "Reverses strings to hide URLs or commands from scanners",
+    "category": "obfuscation"
+  },
+  {
+    "pattern": "VirtualAlloc",
+    "risk": "Critical",
+    "description": "Memory allocation API — shellcode injection",
+    "detail": "Used in macro shellcode loaders to allocate executable memory",
+    "category": "shellcode"
+  },
+  {
+    "pattern": "RtlMoveMemory",
+    "risk": "Critical",
+    "description": "Memory copy API — shellcode injection",
+    "detail": "Used to copy shellcode into allocated memory regions",
+    "category": "shellcode"
+  },
+  {
+    "pattern": "CallWindowProc",
+    "risk": "Critical",
+    "description": "CallWindowProc abuse — shellcode execution",
+    "detail": "Classic VBA shellcode execution technique via Win32 API",
+    "category": "shellcode"
+  },
+  {
+    "pattern": "Declare Function",
+    "risk": "High",
+    "description": "Win32 API declaration in VBA",
+    "detail": "Imports Windows API functions — required for shellcode and evasion",
+    "category": "win32_api"
+  },
+  {
+    "pattern": "ActiveX",
+    "risk": "Medium",
+    "description": "ActiveX object usage in document",
+    "detail": "ActiveX controls can execute code and access system resources",
+    "category": "activex"
+  },
+  {
+    "pattern": "\\x00\\x00\\x00\\x00",
+    "risk": "Low",
+    "description": "Null byte padding detected",
+    "detail": "Large null regions sometimes indicate hidden/encrypted content",
+    "category": "obfuscation"
+  }
+]

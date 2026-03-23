@@ -1,0 +1,184 @@
+[
+  {
+    "pattern": "/JavaScript",
+    "risk": "Critical",
+    "description": "JavaScript code embedded in PDF — executes on open",
+    "detail": "Attackers embed JS to exploit PDF readers or download malware",
+    "category": "js_execution"
+  },
+  {
+    "pattern": "/JS",
+    "risk": "Critical",
+    "description": "JavaScript shorthand tag in PDF",
+    "detail": "Shorthand for /JavaScript — same risk level",
+    "category": "js_execution"
+  },
+  {
+    "pattern": "/Launch",
+    "risk": "Critical",
+    "description": "PDF Launch action — can execute any file on system",
+    "detail": "Can run cmd.exe, PowerShell or any executable silently",
+    "category": "code_execution"
+  },
+  {
+    "pattern": "/OpenAction",
+    "risk": "High",
+    "description": "PDF auto-execute action — triggers when document opens",
+    "detail": "Combined with /Launch or /JS creates drive-by execution",
+    "category": "auto_execute"
+  },
+  {
+    "pattern": "/AA",
+    "risk": "High",
+    "description": "PDF additional actions — triggers on various user actions",
+    "detail": "Can trigger on page open, close, keystroke etc.",
+    "category": "auto_execute"
+  },
+  {
+    "pattern": "/EmbeddedFile",
+    "risk": "High",
+    "description": "File embedded inside PDF — hidden payload",
+    "detail": "Malware can be hidden inside PDFs as embedded files",
+    "category": "embedded_payload"
+  },
+  {
+    "pattern": "/RichMedia",
+    "risk": "Medium",
+    "description": "Rich media embedding — can contain Flash/video exploits",
+    "detail": "Historical attack vector via Flash vulnerabilities",
+    "category": "rich_media"
+  },
+  {
+    "pattern": "/XFA",
+    "risk": "Medium",
+    "description": "XFA form — XML-based forms that can contain scripts",
+    "detail": "XFA forms can execute JavaScript and make network requests",
+    "category": "form_script"
+  },
+  {
+    "pattern": "eval(",
+    "risk": "High",
+    "description": "JavaScript eval() in PDF — executes dynamic code",
+    "detail": "Used to obfuscate malicious JavaScript payloads",
+    "category": "js_execution"
+  },
+  {
+    "pattern": "unescape(",
+    "risk": "High",
+    "description": "String unescaping in PDF JavaScript",
+    "detail": "Common obfuscation technique in malicious PDFs",
+    "category": "obfuscation"
+  },
+  {
+    "pattern": "/URI",
+    "risk": "Low",
+    "description": "External URI reference in PDF",
+    "detail": "PDF links to external resource — may be phishing",
+    "category": "external_url"
+  },
+  {
+    "pattern": "/SubmitForm",
+    "risk": "Medium",
+    "description": "Form submission action — can exfiltrate data",
+    "detail": "PDF can silently submit form data to attacker server",
+    "category": "data_exfil"
+  },
+  {
+    "pattern": "/AcroForm",
+    "risk": "Low",
+    "description": "PDF interactive form detected",
+    "detail": "Forms can be used to harvest user input or trigger actions",
+    "category": "form_script"
+  },
+  {
+    "pattern": "/Encrypt",
+    "risk": "Medium",
+    "description": "PDF is encrypted — contents hidden from scanners",
+    "detail": "Encrypted PDFs are used to hide malicious content from AV tools",
+    "category": "evasion"
+  },
+  {
+    "pattern": "/ObjStm",
+    "risk": "Medium",
+    "description": "Object stream detected — objects compressed inside stream",
+    "detail": "Used to hide dangerous objects from basic pattern scanners",
+    "category": "obfuscation"
+  },
+  {
+    "pattern": "/ASCIIHexDecode",
+    "risk": "Medium",
+    "description": "ASCII hex encoding in stream",
+    "detail": "Encoding filter sometimes used to obfuscate stream content",
+    "category": "obfuscation"
+  },
+  {
+    "pattern": "/ASCII85Decode",
+    "risk": "Medium",
+    "description": "ASCII85 encoding in stream",
+    "detail": "Encoding filter sometimes used to obfuscate stream content",
+    "category": "obfuscation"
+  },
+  {
+    "pattern": "/JBIG2Decode",
+    "risk": "High",
+    "description": "JBIG2 image compression — historic exploit vector",
+    "detail": "CVE-2009-0658: JBIG2 decoder exploit used in targeted attacks",
+    "category": "exploit"
+  },
+  {
+    "pattern": "/GoToR",
+    "risk": "Low",
+    "description": "Remote Go-To action — opens external PDF",
+    "detail": "Can redirect user to a malicious external document",
+    "category": "external_url"
+  },
+  {
+    "pattern": "/Sound",
+    "risk": "Low",
+    "description": "Sound action embedded in PDF",
+    "detail": "Unusual in normal documents — may be used for social engineering",
+    "category": "social_engineering"
+  },
+  {
+    "pattern": "/Movie",
+    "risk": "Low",
+    "description": "Movie action embedded in PDF",
+    "detail": "Can be used to trigger media player exploits",
+    "category": "exploit"
+  },
+  {
+    "pattern": "app.alert",
+    "risk": "Medium",
+    "description": "JavaScript alert dialog in PDF",
+    "detail": "Used in social engineering attacks to trick users",
+    "category": "social_engineering"
+  },
+  {
+    "pattern": "app.exec",
+    "risk": "Critical",
+    "description": "JavaScript app.exec() — executes system commands",
+    "detail": "Dangerous JS API that can run arbitrary commands on the host",
+    "category": "code_execution"
+  },
+  {
+    "pattern": "this.exportDataObject",
+    "risk": "Critical",
+    "description": "JavaScript exportDataObject() — extracts embedded files",
+    "detail": "Used to silently drop and execute embedded malware payloads",
+    "category": "code_execution"
+  },
+  {
+    "pattern": "util.printf",
+    "risk": "High",
+    "description": "JavaScript util.printf() — historic buffer overflow vector",
+    "detail": "CVE-2008-2992: used in early PDF exploits for code execution",
+    "category": "exploit"
+  },
+  {
+    "pattern": "/F ",
+    "risk": "Low",
+    "description": "File specification or font reference",
+    "detail": "Could reference an external file — context-dependent",
+    "category": "external_url"
+  }
+]

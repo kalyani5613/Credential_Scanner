@@ -1,0 +1,254 @@
+[
+  {
+    "api": "VirtualAlloc",
+    "risk": "Critical",
+    "category": "process_injection",
+    "description": "Allocates executable memory — core process injection technique",
+    "detail": "Used to allocate RWX memory regions for shellcode staging"
+  },
+  {
+    "api": "VirtualProtect",
+    "risk": "High",
+    "category": "process_injection",
+    "description": "Changes memory permissions — used in shellcode injection",
+    "detail": "Flips memory region to executable after writing shellcode"
+  },
+  {
+    "api": "WriteProcessMemory",
+    "risk": "Critical",
+    "category": "process_injection",
+    "description": "Writes into another process memory — classic RAT/trojan technique",
+    "detail": "Core API for process hollowing and DLL injection attacks"
+  },
+  {
+    "api": "CreateRemoteThread",
+    "risk": "Critical",
+    "category": "process_injection",
+    "description": "Spawns thread in another process — process injection",
+    "detail": "Launches injected shellcode or DLL in a remote process context"
+  },
+  {
+    "api": "NtUnmapViewOfSection",
+    "risk": "Critical",
+    "category": "process_injection",
+    "description": "Unmaps process memory — process hollowing technique",
+    "detail": "First step of process hollowing — empties legitimate process memory"
+  },
+  {
+    "api": "ZwUnmapViewOfSection",
+    "risk": "Critical",
+    "category": "process_injection",
+    "description": "NT-level memory unmap — process hollowing",
+    "detail": "Native API variant of process hollowing technique"
+  },
+  {
+    "api": "OpenProcess",
+    "risk": "High",
+    "category": "process_access",
+    "description": "Opens handle to another process — surveillance/injection",
+    "detail": "Required first step for most process injection techniques"
+  },
+  {
+    "api": "ReadProcessMemory",
+    "risk": "High",
+    "category": "process_access",
+    "description": "Reads another process memory — credential theft",
+    "detail": "Used by credential dumpers like Mimikatz to read LSASS"
+  },
+  {
+    "api": "SetWindowsHookEx",
+    "risk": "Critical",
+    "category": "keylogger",
+    "description": "Installs system-wide hook — keylogger technique",
+    "detail": "Intercepts all keyboard/mouse events system-wide"
+  },
+  {
+    "api": "GetAsyncKeyState",
+    "risk": "Critical",
+    "category": "keylogger",
+    "description": "Reads keyboard state — keylogger API",
+    "detail": "Polls key states in a loop to capture keystrokes silently"
+  },
+  {
+    "api": "keybd_event",
+    "risk": "High",
+    "category": "keylogger",
+    "description": "Simulates keystrokes — input injection",
+    "detail": "Can inject fake keystrokes into any application"
+  },
+  {
+    "api": "InternetOpen",
+    "risk": "High",
+    "category": "network",
+    "description": "Opens internet connection — malware C2 communication",
+    "detail": "WinInet API used for HTTP-based C2 communication"
+  },
+  {
+    "api": "InternetConnect",
+    "risk": "High",
+    "category": "network",
+    "description": "Connects to remote server — data exfiltration",
+    "detail": "Establishes connection to attacker-controlled server"
+  },
+  {
+    "api": "HttpSendRequest",
+    "risk": "High",
+    "category": "network",
+    "description": "Sends HTTP request — data exfiltration or C2",
+    "detail": "Sends stolen data or receives commands over HTTP"
+  },
+  {
+    "api": "WSAStartup",
+    "risk": "Medium",
+    "category": "network",
+    "description": "Winsock initialization — raw socket usage",
+    "detail": "Required for raw TCP/UDP socket communication"
+  },
+  {
+    "api": "socket",
+    "risk": "Medium",
+    "category": "network",
+    "description": "Raw socket creation",
+    "detail": "Used for custom network protocols or C2 communication"
+  },
+  {
+    "api": "RegSetValueEx",
+    "risk": "High",
+    "category": "persistence",
+    "description": "Writes registry value — persistence mechanism",
+    "detail": "Adds malware to startup via Run/RunOnce registry keys"
+  },
+  {
+    "api": "RegCreateKey",
+    "risk": "High",
+    "category": "persistence",
+    "description": "Creates registry key — persistence mechanism",
+    "detail": "Creates new registry keys for configuration or persistence"
+  },
+  {
+    "api": "CreateService",
+    "risk": "Critical",
+    "category": "persistence",
+    "description": "Creates Windows service — persistent backdoor",
+    "detail": "Installs malware as a service that survives reboots"
+  },
+  {
+    "api": "SchtasksW",
+    "risk": "High",
+    "category": "persistence",
+    "description": "Scheduled task creation — persistence",
+    "detail": "Creates scheduled tasks to re-execute malware periodically"
+  },
+  {
+    "api": "IsDebuggerPresent",
+    "risk": "High",
+    "category": "anti_analysis",
+    "description": "Checks for debugger — anti-analysis evasion",
+    "detail": "Terminates or changes behaviour when debugger is detected"
+  },
+  {
+    "api": "CheckRemoteDebuggerPresent",
+    "risk": "High",
+    "category": "anti_analysis",
+    "description": "Checks for remote debugger — sandbox evasion",
+    "detail": "Detects remote debugging sessions used in analysis environments"
+  },
+  {
+    "api": "GetTickCount",
+    "risk": "Medium",
+    "category": "anti_analysis",
+    "description": "Timing check — used to detect sandbox slowdown",
+    "detail": "Compares elapsed time to detect emulation/sandbox environments"
+  },
+  {
+    "api": "NtQueryInformationProcess",
+    "risk": "High",
+    "category": "anti_analysis",
+    "description": "Low-level process query — rootkit/evasion technique",
+    "detail": "Checks ProcessDebugPort to detect debuggers at native API level"
+  },
+  {
+    "api": "OutputDebugString",
+    "risk": "Medium",
+    "category": "anti_analysis",
+    "description": "Debug string output — anti-debug timing trick",
+    "detail": "Used in timing-based anti-debug checks"
+  },
+  {
+    "api": "GetSystemInfo",
+    "risk": "Low",
+    "category": "recon",
+    "description": "Reads system information — fingerprinting",
+    "detail": "Collects CPU count, memory size — sandbox detection"
+  },
+  {
+    "api": "EnumProcesses",
+    "risk": "High",
+    "category": "recon",
+    "description": "Enumerates running processes — AV detection",
+    "detail": "Lists all processes to find and avoid security tools"
+  },
+  {
+    "api": "CreateToolhelp32Snapshot",
+    "risk": "High",
+    "category": "recon",
+    "description": "Process/module enumeration — AV evasion",
+    "detail": "Snapshots running processes to detect analysis tools"
+  },
+  {
+    "api": "FindFirstFile",
+    "risk": "Low",
+    "category": "recon",
+    "description": "File system enumeration",
+    "detail": "Searches filesystem — may be looking for targets or AV files"
+  },
+  {
+    "api": "CryptEncrypt",
+    "risk": "Critical",
+    "category": "ransomware",
+    "description": "Encryption API — ransomware indicator",
+    "detail": "Core API used by ransomware to encrypt victim files"
+  },
+  {
+    "api": "CryptGenKey",
+    "risk": "Critical",
+    "category": "ransomware",
+    "description": "Generates encryption key — ransomware indicator",
+    "detail": "Generates keys used to encrypt files in ransomware attacks"
+  },
+  {
+    "api": "DeleteFile",
+    "risk": "Medium",
+    "category": "ransomware",
+    "description": "File deletion API",
+    "detail": "Used by ransomware to delete originals after encryption"
+  },
+  {
+    "api": "ShellExecute",
+    "risk": "High",
+    "category": "shell_exec",
+    "description": "ShellExecute — launches files/programs",
+    "detail": "Used to launch dropped payloads or open phishing URLs"
+  },
+  {
+    "api": "WinExec",
+    "risk": "Critical",
+    "category": "shell_exec",
+    "description": "WinExec — direct program execution",
+    "detail": "Legacy but still used in malware for simple command execution"
+  },
+  {
+    "api": "LoadLibrary",
+    "risk": "Medium",
+    "category": "dll_load",
+    "description": "Dynamic DLL loading",
+    "detail": "Loads DLLs at runtime — used in DLL injection and unpacking"
+  },
+  {
+    "api": "GetProcAddress",
+    "risk": "Medium",
+    "category": "dll_load",
+    "description": "Resolves API address at runtime",
+    "detail": "Used with LoadLibrary to hide imports from static analysis"
+  }
+]

@@ -9,6 +9,7 @@ import time
 from extractor        import extract_text
 from attachment_scanner import analyze_attachment
 from patterns         import run_regex_scan, reload_patterns
+from detect_secrets_detector import run_detect_secrets_scan
 from entropy          import run_entropy_scan
 from ner_detector     import run_ner_scan
 from llm_analyzer     import run_llm_scan, check_ollama_running
@@ -41,11 +42,23 @@ def full_scan(text: str, source: str, filename: str = None) -> dict:
         print(f"[scan] Finished {stage_name} in {elapsed:.2f}s")
         return result
 
+    # STEP 1: run detect-secrets (primary)
+    detect_results = track("detect_secrets_scan", run_detect_secrets_scan, text)
+
+    # STEP 2: fallback regex
+    regex_results = track("regex_scan", run_regex_scan, text)
+
+    # STEP 3: other layers
+    entropy_results = track("entropy_scan", run_entropy_scan, text)
+    ner_results = track("ner_scan", run_ner_scan, text)
+
+    # STEP 4: combine (WITHOUT duplicates yet)
     raw = (
-        track("regex_scan", run_regex_scan, text) +
-        track("entropy_scan", run_entropy_scan, text) +
-        track("ner_scan", run_ner_scan, text)
-    )
+    detect_results +
+    regex_results +
+    entropy_results +
+    ner_results
+)  
 
     llm_available = track("ollama_healthcheck", check_ollama_running)
     if llm_available:
