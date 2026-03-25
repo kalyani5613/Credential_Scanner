@@ -363,7 +363,10 @@ def _fitz_scan(file_bytes: bytes) -> list:
         ))
 
     # Annotations
-    total_annots = sum(len(page.annots()) for page in doc)
+    total_annots = sum(
+    len(list(page.annots())) if page.annots() else 0
+    for page in doc
+)
     if total_annots > 20:
         findings.append(_make_finding(
             rule        = "high_annotation_count (fitz)",

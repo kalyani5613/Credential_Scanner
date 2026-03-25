@@ -1,124 +1,105 @@
-# Stage 4 — ML Feature Scorer
-# Extracts PE header features and produces ML-style risk score
-# In production: trained sklearn RandomForest classifier
-# Here: weighted feature scoring on known malware indicators
-
-import math
+import os
+import joblib
+import pandas as pd
 
 
-def calculate_entropy(data: bytes) -> float:
-    if not data:
-        return 0.0
-    freq = {}
-    for b in data:
-        freq[b] = freq.get(b, 0) + 1
-    length = len(data)
-    return round(
-        -sum((c / length) * math.log2(c / length)
-             for c in freq.values()), 3
-    )
+MODEL_PATH = os.path.join(
+    os.path.dirname(__file__),
+    "models",
+    "malware_model.pkl"
+)
 
 
-# Feature weights based on malware research
-# Higher weight = stronger malware indicator
-FEATURE_WEIGHTS = {
-    "is_pe_file":             0,   # neutral — just classification
-    "has_upx_packer":         15,
-    "has_aspack_packer":      15,
-    "has_themida":            20,
-    "has_process_injection":  25,
-    "has_keylogger_api":      30,
-    "has_network_api":        20,
-    "has_anti_debug":         20,
-    "has_registry_write":     15,
-    "has_service_creation":   20,
-    "has_high_entropy":       15,
-    "has_suspicious_section": 10,
-    "filesize_very_small":    10,  # tiny PE = suspicious
-    "filesize_very_large":     5,  # large PE = possible dropper
-}
+# Load model safely
+model = None
+if os.path.exists(MODEL_PATH):
+    model = joblib.load(MODEL_PATH)
 
 
-def extract_features(file_bytes: bytes) -> dict:
-    """
-    Extract binary features from PE file.
-    Returns feature dict with boolean values.
-    """
-    if file_bytes[:2] != b"\x4d\x5a":
-        return {"is_pe_file": False}
+def score(scan_result):
 
-    content = file_bytes.decode("latin-1", errors="ignore")
-    size    = len(file_bytes)
-
-    return {
-        "is_pe_file":             True,
-        "has_upx_packer":         b"UPX" in file_bytes,
-        "has_aspack_packer":      b"ASPack" in file_bytes,
-        "has_themida":            b"Themida" in file_bytes,
-        "has_process_injection":  any(
-            api in content for api in
-            ["VirtualAlloc", "WriteProcessMemory", "CreateRemoteThread"]
-        ),
-        "has_keylogger_api":      any(
-            api in content for api in
-            ["GetAsyncKeyState", "SetWindowsHookEx", "keybd_event"]
-        ),
-        "has_network_api":        any(
-            api in content for api in
-            ["InternetOpen", "InternetConnect", "HttpSendRequest"]
-        ),
-        "has_anti_debug":         any(
-            api in content for api in
-            ["IsDebuggerPresent", "CheckRemoteDebuggerPresent"]
-        ),
-        "has_registry_write":     "RegSetValueEx" in content,
-        "has_service_creation":   "CreateService" in content,
-        "has_high_entropy":       calculate_entropy(
-            file_bytes[:4096]
-        ) > 7.0,
-        "has_suspicious_section": calculate_entropy(
-            file_bytes[-4096:]
-        ) > 7.2,
-        "filesize_very_small":    size < 1024,
-        "filesize_very_large":    size > 10 * 1024 * 1024,
-    }
-
-
-def score(file_bytes: bytes) -> dict:
-    """
-    Calculate ML-style risk score from PE features.
-    Returns score, label, and active features.
-    """
-    features = extract_features(file_bytes)
-
-    if not features.get("is_pe_file"):
+    # If model not available
+    if model is None:
         return {
             "applicable": False,
-            "score":      0,
-            "label":      "Not a PE file — ML scoring not applicable",
-            "features":   {},
+            "score": 50.0,
+            "label": "Model unavailable"
         }
 
-    total = sum(
-        FEATURE_WEIGHTS.get(k, 0)
-        for k, v in features.items()
-        if v and k != "is_pe_file"
+    findings = scan_result.get("stage_2_findings", [])
+    file_type = scan_result.get("stage_1_file_type", {})
+    hash_result = scan_result.get("stage_3_hash", {})
+
+    # Risk counts
+    critical = sum(1 for f in findings if f.get("risk_tier") == "Critical")
+    high = sum(1 for f in findings if f.get("risk_tier") == "High")
+    medium = sum(1 for f in findings if f.get("risk_tier") == "Medium")
+    low = sum(1 for f in findings if f.get("risk_tier") == "Low")
+
+    pattern_count = len(findings)
+
+    hash_match = 1 if hash_result.get("known_malware") else 0
+    extension_mismatch = 1 if file_type.get("extension_mismatch") else 0
+
+    file_size = file_type.get("file_size_kb", 0)
+
+    # Behavior indicators
+    macro_detected = int(
+        any("macro" in f.get("description", "").lower() for f in findings)
     )
-    total = min(total, 100)
 
-    if total >= 70:   label = "Likely malicious"
-    elif total >= 40: label = "Suspicious"
-    elif total > 0:   label = "Low-risk indicators present"
-    else:             label = "Clean"
+    pdf_js_detected = int(
+        any("javascript" in f.get("description", "").lower() for f in findings)
+    )
 
-    active = {
-        k: v for k, v in features.items()
-        if v and k not in ("is_pe_file",)
-    }
+    embedded_file_detected = int(
+        any("embedded" in f.get("description", "").lower() for f in findings)
+    )
+
+    packer_detected = int(
+        any("packer" in f.get("description", "").lower() for f in findings)
+    )
+
+    suspicious_imports = int(
+        any("import" in f.get("description", "").lower() for f in findings)
+    )
+
+    yara_match_count = pattern_count
+
+    # EXACT same order as training_dataset.csv
+    features = [
+        critical,
+        high,
+        medium,
+        low,
+        pattern_count,
+        hash_match,
+        extension_mismatch,
+        file_size,
+        macro_detected,
+        pdf_js_detected,
+        embedded_file_detected,
+        packer_detected,
+        suspicious_imports,
+        yara_match_count
+    ]
+
+    # Convert to dataframe using trained feature names
+    features_df = pd.DataFrame([features], columns=model.feature_name_)
+
+    probability = model.predict_proba(features_df)[0][1]
+
+    score_percent =float(round(probability * 100, 2))
+
+    if score_percent >= 80:
+        label = "Malicious"
+    elif score_percent >= 50:
+        label = "Suspicious"
+    else:
+        label = "Benign"
 
     return {
         "applicable": True,
-        "score":      total,
-        "label":      label,
-        "features":   active,
+        "score": score_percent,
+        "label": label
     }

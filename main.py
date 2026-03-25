@@ -566,6 +566,11 @@ function MalwareResults({ data, onReset }) {
         File: {data.filename} ({data.file_size_kb} KB)
       </div>
 
+      {data.recommended_action &&
+        <div className={`abox ${label}`} style={{marginTop:8}}>
+          Recommended action: {data.recommended_action}
+        </div>}
+
       <div className="pills">
         <span className="pill t">Total: {data.total_findings}</span>
         <span className="pill c">Critical: {data.critical_count}</span>
@@ -649,32 +654,7 @@ function MalwareResults({ data, onReset }) {
         </div>
       </div>
 
-      {data.stages?.stage_4_ml?.applicable &&
-        <div className="layer">
-          <div className="lhead">
-            <div className="ltitle">
-              <span className="badge b2">Stage 4</span>
-              ML Classifier
-            </div>
-          </div>
-          <div className="lbody">
-            <div className="finding">
-              <div className="ftop">
-                <span className="ftype">
-                  {data.stages.stage_4_ml.label}
-                </span>
-                <span className="conf">
-                  score {data.stages.stage_4_ml.score}
-                </span>
-              </div>
-              {Object.keys(data.stages.stage_4_ml.features || {}).map(k => (
-                <div key={k} className="fdesc">
-                  {k.replace(/_/g,' ')}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>}
+
 
       {(data.stages?.stage_5_urls || []).length > 0 &&
         <div className="layer">
